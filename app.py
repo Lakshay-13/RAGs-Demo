@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Key Handling (use secrets if possible)
-gemini_key = os.getenv('ASSEMBLYAI_API_KEY')
+gemini_key = os.getenv('GEMINI_API_KEY')
 
 if gemini_key is None:
     gemini_key = st.text_input("Enter your Gemini API key:", type="password")
