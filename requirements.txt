@@ -1,0 +1,6 @@
+streamlit
+python-dotenv
+openai
+scikit-learn
+langchain
+langchain_openai
