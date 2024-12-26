@@ -2,26 +2,25 @@ import streamlit as st
 import numpy as np
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
 # API Key Handling (use secrets if possible)
-gemini_key = os.getenv('GEMINI_API_KEY')
+GOOGLE_API_KEY = os.getenv('GEMINI_API_KEY')
 
-if gemini_key is None:
-    gemini_key = st.text_input("Enter your Gemini API key:", type="password")
+# Dev mode
+GOOGLE_API_KEY = "AIzaSyDo3muayzTw9ZuT4Ht1E7VFb9u4AlGUc6I"
+
+if GOOGLE_API_KEY is None:
+    GOOGLE_API_KEY = st.text_input("Enter your Gemini API key:", type="password")
+
+os.environ['GOOGLE_API_KEY'] = GOOGLE_API_KEY
 
 # Initialize OpenAI client and LLM
-client = OpenAI(api_key=gemini_key, base_url="https://generativelanguage.googleapis.com/v1beta/")
-llm = ChatOpenAI(
-    model_name='gemini-1.5-flash',
-    temperature=0.9,
-    openai_api_key=gemini_key,
-    openai_api_base="https://generativelanguage.googleapis.com/v1beta/openai/"
-)
-
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 # Initialize session state variables
 if 'paragraphs' not in st.session_state:
@@ -29,16 +28,11 @@ if 'paragraphs' not in st.session_state:
 if 'paragraph_embeddings' not in st.session_state:
     st.session_state.paragraph_embeddings = np.array([]) # Initialize as empty numpy array
 
-# Function to embed text (no changes)
-def embed_text(text):
-    response = client.embeddings.create(input=text, model="text-embedding-004")
-    return response.data[0].embedding
-
 # Function to process text using session state
 def process_text(text, chunk_size):
     st.session_state.paragraphs = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
     with st.spinner("Calculating embeddings..."):
-        st.session_state.paragraph_embeddings = [embed_text(paragraph) for paragraph in st.session_state.paragraphs]
+        st.session_state.paragraph_embeddings = embeddings.embed_documents(st.session_state.paragraphs)
     st.session_state.paragraph_embeddings = np.array(st.session_state.paragraph_embeddings)
 
 # Streamlit App
@@ -56,7 +50,7 @@ if uploaded_files:
 
 col1, col2 = st.columns(2)
 with col1:
-    chunk_size = st.number_input("Chunk Size:", min_value=1, value=400)
+    chunk_size = st.number_input("Chunk Size:", min_value=1, value=128)
 with col2:
     if st.button("Process Text"):
         if not combined_text:
@@ -78,7 +72,7 @@ with col3:
         elif not query:
             st.info("Please enter a query.")
         else:
-            query_embedding = embed_text(query)
+            query_embedding = embeddings.embed_query(query)
             similarities = cosine_similarity([query_embedding], st.session_state.paragraph_embeddings)
             most_similar_indices = np.argsort(similarities[0])[::-1][:n_results]
             st.subheader("Search Results:")
@@ -92,7 +86,7 @@ with col4:
         elif not query:
             st.info("Please enter a query.")
         else:
-            query_embedding = embed_text(query)
+            query_embedding = embeddings.embed_query(query)
             similarities = cosine_similarity([query_embedding], st.session_state.paragraph_embeddings)
             most_similar_indices = np.argsort(similarities[0])[::-1][:n_results]
 
