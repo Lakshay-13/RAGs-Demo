@@ -1,2 +1,2 @@
-# RAGs
-https://intro-to-rags.streamlit.app/
+# RAGs Demo
+https://rags-demo.streamlit.app
