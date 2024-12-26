@@ -11,7 +11,7 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Dev mode
-GOOGLE_API_KEY = "AIzaSyDo3muayzTw9ZuT4Ht1E7VFb9u4AlGUc6I"
+# GOOGLE_API_KEY = 
 
 if GOOGLE_API_KEY is None:
     GOOGLE_API_KEY = st.text_input("Enter your Gemini API key:", type="password")
