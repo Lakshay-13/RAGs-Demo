@@ -52,11 +52,6 @@ if uploaded_files:
 
     st.text_area("Uploaded Text:", st.session_state.combined_text, height=150)
 
-chunk_size = st.number_input("Chunk Size:", min_value=1, value=512)
-query = st.text_input("Enter your query:")
-n_results = st.number_input("Number of results to display:", min_value=1, value=1)
-use_context = st.checkbox("Use Context", value=True)
-
 system_message = {
     "role": "system",
     "content": """You are an AI assistant specifically designed to work with RAG (Retrieval Augmented Generation) systems. Your responses must be strictly based on the provided context. Follow these rules:
@@ -71,91 +66,122 @@ system_message = {
 Remember: You are a context-dependent system. Never draw from general knowledge - only use the specific context provided in each query."""
 }
 
-# Buttons in one row with three columns
-col1, col2, col3 = st.columns(3)
+if rag_type=="Naive RAG":
 
-with col1:
-    process_button = st.button("Process Text")
-with col2:
-    search_button = st.button("Search")
-with col3:
-    run_query_button = st.button("Run Query")
+    chunk_size = st.number_input("Chunk Size:", min_value=1, value=512)
+    query = st.text_input("Enter your query:")
+    n_results = st.number_input("Number of similar chunks to find:", min_value=1, value=1)
+    use_context = st.checkbox("Use Context", value=True)
+    # Buttons in one row with three columns
+    _, col1, col2, col3, _ = st.columns(5)
 
-# Output section spans full width
-if process_button:
-    if not st.session_state.combined_text:
-        st.info("Please upload text first.")
-    elif not query:
-        st.info("Please enter a query first.")
-    else:
-        process_function = RAG_IMPLEMENTATIONS[rag_type]
-        st.session_state.paragraphs, st.session_state.paragraph_embeddings, st.session_state.query_embedding = process_function(
-            st.session_state.combined_text, 
-            chunk_size,
-            embeddings,
-            query
-        )
-        st.session_state.text_processed = True
-        st.success(f"Text processed using {rag_type}!")
+    with col1:
+        process_button = st.button("Process Text")
+    with col2:
+        search_button = st.button("Search")
+    with col3:
+        run_query_button = st.button("Run Query")
 
-
-if search_button:
-    if not st.session_state.text_processed:
-        st.info("Please process the text first.")
-    elif not query:
-        st.info("Please enter a query.")
-    else:
-        most_similar_indices, _ = process_query(
-            query, 
-            embeddings,
-            st.session_state.paragraph_embeddings,
-            st.session_state.query_embedding,
-            n_results
-        )
-        st.subheader("Search Results:")
-        for index in most_similar_indices:
-            st.write(st.session_state.paragraphs[index])
-
-if run_query_button:
-    if not st.session_state.text_processed:
-        st.info("Please process the text first.")
-    elif not query:
-        st.info("Please enter a query.")
-    else:
-        most_similar_indices, _ = process_query(
-            query, 
-            embeddings,
-            st.session_state.paragraph_embeddings,
-            st.session_state.query_embedding,
-            n_results
-        )
-
-        if use_context:
-            most_similar_paragraph = "\n\n".join([st.session_state.paragraphs[index] for index in most_similar_indices])
-            llm_query = f"CONTEXT: {most_similar_paragraph}\n\nQUERY: {query}"
-            messages = [
-                system_message,
-                {"role": "user", "content": llm_query},
-            ]
+    # Output section spans full width
+    if process_button:
+        if not st.session_state.combined_text:
+            st.info("Please upload text first.")
+        elif not query:
+            st.info("Please enter a query first.")
         else:
-            llm_query = query
+            process_function = RAG_IMPLEMENTATIONS[rag_type]
+            st.session_state.paragraphs, st.session_state.paragraph_embeddings, st.session_state.query_embedding = process_function(
+                st.session_state.combined_text, 
+                chunk_size,
+                embeddings,
+                query
+            )
+            st.session_state.text_processed = True
+            st.success(f"Text processed using {rag_type}!")
 
-            messages = [
-                {
-                "role": "system",
-                "content": "You are a helpful assistant."
-            },
-                {"role": "user", "content": llm_query},
-            ]
 
-        try:
-            response = llm.invoke(messages).content
-            st.write(response)
+    if search_button:
+        if not st.session_state.text_processed:
+            st.info("Please process the text first.")
+        elif not query:
+            st.info("Please enter a query.")
+        else:
+            most_similar_indices, _ = process_query(
+                query, 
+                embeddings,
+                st.session_state.paragraph_embeddings,
+                st.session_state.query_embedding,
+                n_results
+            )
+            st.subheader("Search Results:")
+            for index in most_similar_indices:
+                st.write(st.session_state.paragraphs[index])
+
+    if run_query_button:
+        if not st.session_state.text_processed:
+            st.info("Please process the text first.")
+        elif not query:
+            st.info("Please enter a query.")
+        else:
+            most_similar_indices, _ = process_query(
+                query, 
+                embeddings,
+                st.session_state.paragraph_embeddings,
+                st.session_state.query_embedding,
+                n_results
+            )
 
             if use_context:
-                st.subheader("Relevant Context:")
-                for index in most_similar_indices:
-                    st.write(st.session_state.paragraphs[index])
+                most_similar_paragraph = "\n\n".join([st.session_state.paragraphs[index] for index in most_similar_indices])
+                llm_query = f"CONTEXT: {most_similar_paragraph}\n\nQUERY: {query}"
+                messages = [
+                    system_message,
+                    {"role": "user", "content": llm_query},
+                ]
+            else:
+                llm_query = query
 
-        except Exception as e:
-            st.error(f"Error generating response: {e}")
+                messages = [
+                    {
+                    "role": "system",
+                    "content": "You are a helpful assistant."
+                },
+                    {"role": "user", "content": llm_query},
+                ]
+
+            try:
+                response = llm.invoke(messages).content
+                st.write(response)
+
+                if use_context:
+                    st.subheader("Relevant Context:")
+                    for index in most_similar_indices:
+                        st.write(st.session_state.paragraphs[index])
+
+            except Exception as e:
+                st.error(f"Error generating response: {e}")
+
+else:
+    
+    query = st.text_input("Enter your query:")
+    _, _, col1, _, _ = st.columns(5)
+    
+    with col1:
+        run_query_button = st.button("Run Query")
+
+    # Output section spans full width
+    if run_query_button:
+        if not st.session_state.combined_text:
+            st.info("Please upload text first.")
+        elif not query:
+            st.info("Please enter a query first.")
+        else:
+            process_function = RAG_IMPLEMENTATIONS[rag_type]
+            response = process_function(
+                st.session_state.combined_text, 
+                embeddings,
+                query,
+                llm
+            )
+            st.write(response)
+            st.success(f"Query processed using {rag_type}!")
