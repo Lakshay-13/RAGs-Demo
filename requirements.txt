@@ -3,4 +3,6 @@ python-dotenv
 openai
 scikit-learn
 langchain
-langchain_openai
+langchain-experimental
+langchain-google-genai
+faiss-cpu
