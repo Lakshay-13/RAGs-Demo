@@ -63,7 +63,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For questions or support, please open an issue in the repository or contact [your-email@example.com](mailto:your-email@example.com).
+For questions or support, please open an issue in the repository or contact [lakshaychawla13@gmail.com](mailto:lakshaychawla13@gmail.com).
 
 ---
 
