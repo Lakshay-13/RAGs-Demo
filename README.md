@@ -14,7 +14,7 @@ Ensure you have the following installed on your system:
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/RAGs-Demo.git
+   git clone https://github.com/Lakshay-13/RAGs-Demo.git
    ```
 
 2. **Navigate to the Project Directory**
